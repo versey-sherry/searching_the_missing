@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Name: Sherry Lin
+#
 
 import sys
 
@@ -9,8 +10,6 @@ Homework 1: finding the missing motif
 Input/Output: STDIN / STDOUT
 """
 
-
-# TODO: Read in fa or fna file
 # TODO: Produce count for particular k-mers
 # TODO: Compute expected Pr(K)
 # TODO: Compute mu and sd
@@ -127,6 +126,16 @@ class SearchMissing():
         self.pValFlag = pvalflag
 
     def countSeqRseq(self, sequence, k):
+        """
+
+        Args:
+            sequence: the entire DNA sequence
+            k: the target k-mer
+
+        Returns:
+            a dictionary contains the Seq:rSeq pair count for all the k-mer
+
+        """
         # Ignore the seq and reverse seq relations and record k-mer counts
         seqDict = {}
         for n in range(len(sequence) + 1 - k):
@@ -136,11 +145,39 @@ class SearchMissing():
             else:
                 seqDict[tempSeq] = 1
 
+        # Pairwise dictionary with keys seq:rSeq
         pairDict = {}
+        # sort the list so the pairs will be in alpha order
+        seqList = sorted(seqDict.keys())
+        # add the seq to counted list to avoid double count
+        counted = []
 
-
+        # Using string.translate() method to generate complement sequence
+        # https://www.programiz.com/python-programming/methods/string/translate
+        # ascii table https://www.ascii-code.com/
+        translation = {65: 84, 84: 65, 67: 71, 71: 67}
+        # sum = 0
+        for seq in seqList:
+            rSeq = seq.translate(translation)[::-1]
+            if rSeq not in counted:
+                value = seqDict[seq]
+                seqDict[seq] = 0
+                counted.append(seq)
+                # Reverse complement sequence may not be in the dictionary
+                if seqDict.get(rSeq):
+                    value += seqDict[rSeq]
+                    seqDict[rSeq] = 0
+                counted.append(rSeq)
+                key = ''.join([seq, ':', rSeq])
+                pairDict[key] = value
+                # print(seq, ':', rSeq, value)
+                # sum += value
+        # print('total', len(self.sequence)+1-k, 'sum is', sum)
+        # sum = 0
+        # for item, value in pairDict.items():
+        #    sum+=value
+        # print('sanity check sum', sum)
         return pairDict
-
 
 class Usage(Exception):
     '''
