@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
-#Name: Sherry Lin
+# Name: Sherry Lin
+
+import sys
 
 """
 Homework 1: finding the missing motif
 
 Input/Output: STDIN / STDOUT
 """
-#TODO: Read in fa or fna file
-#TODO: Produce count for particular k-mers
-#TODO: Compute expected Pr(K)
-#TODO: Compute mu and sd
-#TODO: Output the results
+
+
+# TODO: Read in fa or fna file
+# TODO: Produce count for particular k-mers
+# TODO: Compute expected Pr(K)
+# TODO: Compute mu and sd
+# TODO: Output the results
 # print('{0:8}:{1:8}\t{2:0d}\t{3:0.2f}\t{4:0.2f}'.format(
 # seq, rSeq, count,E,pVal))
-#TODO: Add p value by scipy.stats.norm.cdf(z)
+# TODO: Add p value by scipy.stats.norm.cdf(z)
 
 class CommandLine():
     '''
@@ -45,18 +49,97 @@ class CommandLine():
             add_help=True,  # default is True
             prefix_chars='-',
             usage='%(prog)s [options] -option1[default] <input >output'
-            )
-        self.parser.add_argument('--option', action='store', help='foo help')
+        )
         self.parser.add_argument('--minMotif', type=int, help='minimum motif size to evaluate (int>=3)')
         self.parser.add_argument('--maxMotif', type=int, help='maximum motif size to evaluate (int<=8)')
         self.parser.add_argument('--cutoff', type=int, help='Z-score cutoff (negative int)')
-        self.parser.add_argument('--kScoring', action='store_true', )
-        self.parser.add_argument('-l', '--list', action='append', nargs='?', help='list help')  # allows multiple list options
-        self.parser.add_argument('-v', '--version', action='version', version='%(prog)s 0.1')
+        self.parser.add_argument('--kScoring', action='store_true', help='displaying ')
+        self.parser.add_argument('--version', action='version', version='%(prog)s 0.1')
         if inOpts is None:
             self.args = self.parser.parse_args()
         else:
             self.args = self.parser.parse_args(inOpts)
+
+
+class FastAreader():
+    """
+    Helper function that returns objects of header and the DNA sequences separately
+
+    """
+
+    def __init__(self, fname=''):
+        self.fname = fname
+
+    def doOpen(self):
+        if self.fname is '':
+            return sys.stdin
+        else:
+            return open(self.fname)
+
+    def readFasta(self):
+
+        header = ''
+        sequence = ''
+
+        with self.doOpen() as fileH:
+
+            header = ''
+            sequence = ''
+
+            # skip to first fasta header
+            line = fileH.readline()
+            while not line.startswith('>'):
+                line = fileH.readline()
+            header = line[1:].rstrip()
+
+            for line in fileH:
+                if line.startswith('>'):
+                    yield header, sequence
+                    header = line[1:].rstrip()
+                    sequence = ''
+                else:
+                    sequence += ''.join(line.rstrip().split()).upper()
+
+        yield header, sequence
+
+
+class SearchMissing():
+    """
+    Algorithms that takes single strand of DNA, count the number of k-mers, output the sequences count and Z-score
+    Null model is binomial
+    Probability is computed with Markovian(2)
+    """
+
+    def __init__(self, sequence, min, max, cutoff, pvalflag):
+        """
+
+        Args:
+            sequence: DNA sequence
+            min: min for the ker to consider min is 3
+            max: max for the ker to consider max is 8
+            cutoff: cut off for z-score, negative value less than
+            pvalflag: if present, compute the normal distributed group
+        """
+        self.sequence = sequence
+        self.min = min
+        self.max = max
+        self.cutoff = cutoff
+        self.pValFlag = pvalflag
+
+    def countSeqRseq(self, sequence, k):
+        # Ignore the seq and reverse seq relations and record k-mer counts
+        seqDict = {}
+        for n in range(len(sequence) + 1 - k):
+            tempSeq = sequence[n:n + k]
+            if seqDict.get(tempSeq):
+                seqDict[tempSeq] += 1
+            else:
+                seqDict[tempSeq] = 1
+
+        pairDict = {}
+
+
+        return pairDict
 
 
 class Usage(Exception):
@@ -70,34 +153,31 @@ class Usage(Exception):
 
 def main(myCommandLine=None):
     '''
-    Implement the Usage exception handler that can be raised from anywhere in process.
+    Implement finding the missing sequence
 
     '''
-    if myCommandLine is None:
-        myCommandLine = CommandLine()  # read options from the command line
-    else:
-        myCommandLine = CommandLine(
-            myCommandLine)  # interpret the list passed from the caller of main as the commandline.
+
+    myCommandLine = CommandLine()  # read options from the command line
 
     try:
-
         print(myCommandLine.args)  # print the parsed argument string .. as there is nothing better to do
-
-        if myCommandLine.args.requiredBool:
-            print('requiredBool is', str(myCommandLine.args.requiredBool))  ## this is just an example
-        else:
-            pass
-        raise Usage(
-            'testing')  # this is an example of how to raise a Usage exception and you can include some text that will get printed. Delete this is you dont need it
-
     except Usage as err:
         print(err.msg)
 
+    # Get the commandline arguments
+    min = myCommandLine.args.minMotif
+    max = myCommandLine.args.maxMotif
+    cutoff = myCommandLine.args.cutoff
+    pValFlag = myCommandLine.args.kScoring
+
+    # print(min, max, cutoff, pValFlag)
+
+    fastaFile = FastAreader().readFasta()
+    for header, sequence in fastaFile:
+        # print('header is', header)
+        # print('seq is', sequence[0:10])
+        print(SearchMissing(sequence, min, max, cutoff, pValFlag))
+
 
 if __name__ == "__main__":
-#   main(['-r'])  # this would make this program.py behave as written
-
-# if you want to make use of a test commandLine, you could do it like this ( notice that it is a list of strings ):
-#   main([ '--bool',
-#          '--character=b',
-#          '-i=10'])
+    main()
