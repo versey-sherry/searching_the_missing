@@ -106,17 +106,17 @@ class SearchMissing():
     Probability is computed with Markovian(2)
     """
 
-    def __init__(self, sequence, min, max, cutoff, pValFlag):
+    def __init__(self, sequences, min, max, cutoff, pValFlag):
         """
 
         Args:
-            sequence: DNA sequence
+            sequence: DNA sequences, a list containing all fasta sequences
             min: min for the ker to consider min is 3
             max: max for the ker to consider max is 8
             cutoff: cut off for z-score, negative value less than
             pvalflag: if present, compute the normal distributed group
         """
-        self.sequence = sequence
+        self.sequences = sequences
         self.min = min
         self.max = max
         self.cutoff = cutoff
@@ -124,7 +124,6 @@ class SearchMissing():
         self.kDict = self.genAllk()
 
     def countkSeqRseq(self, k):
-        sequence = self.sequence
         """
 
         Args:
@@ -136,12 +135,14 @@ class SearchMissing():
         """
         # Ignore the seq and reverse seq relations and record k-mer counts
         seqDict = {}
-        for n in range(len(sequence) + 1 - k):
-            tempSeq = sequence[n:n + k]
-            if seqDict.get(tempSeq):
-                seqDict[tempSeq] += 1
-            else:
-                seqDict[tempSeq] = 1
+
+        for sequence in self.sequences:
+            for n in range(len(sequence) + 1 - k):
+                tempSeq = sequence[n:n + k]
+                if seqDict.get(tempSeq):
+                    seqDict[tempSeq] += 1
+                else:
+                    seqDict[tempSeq] = 1
 
         # Pairwise dictionary with keys seq:rSeq
         pairDict = {}
@@ -204,7 +205,8 @@ class SearchMissing():
             zScore: zScore for the sequence
         """
         # length of DNA sequence is significantly large so n = N-k+1 can be approximated length of n
-        n = len(self.sequence)
+        # n = len(self.sequence)
+        n = sum([len(sequence) for sequence in self.sequences])
 
         prefix = targetSeq[0:-1]
         suffix = targetSeq[1:]
@@ -245,10 +247,11 @@ class SearchMissing():
         """
         resultDict = {}
         for k in range(self.min, self.max+1):
-            for n in range(len(self.sequence)+1-k):
-                tempSeq = self.sequence[n:n+k]
-                targetSeq, countK, mu, zScore = self.zScore(tempSeq)
-                resultDict[targetSeq] = [countK, mu, zScore]
+            for sequence in self.sequences:
+                for n in range(len(sequence)+1-k):
+                    tempSeq = sequence[n:n+k]
+                    targetSeq, countK, mu, zScore = self.zScore(tempSeq)
+                    resultDict[targetSeq] = [countK, mu, zScore]
         return resultDict
 
     def printReuslts(self):
@@ -292,16 +295,18 @@ def main(myCommandLine=None):
     # print(min, max, cutoff, pValFlag)
 
     fastaFile = FastAreader().readFasta()
+    # store all sequence in a list
+    sequences = []
     for header, sequence in fastaFile:
         # print('header is', header)
         # print('seq is', sequence)
+        sequences.append(sequence)
 
-        searchSequence = SearchMissing(sequence, min, max, cutoff, pValFlag)
+    if pValFlag:
+        pass
+    else:
+        searchSequence = SearchMissing(sequences, min, max, cutoff, pValFlag)
         searchSequence.printReuslts()
-        if pValFlag:
-            pass
-        else:
-            pass
 
 
 if __name__ == "__main__":
