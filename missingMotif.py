@@ -3,6 +3,7 @@
 #
 
 import sys
+from math import sqrt
 
 """
 Homework 1: finding the missing motif
@@ -124,31 +125,12 @@ class SearchMissing():
         self.max = max
         self.cutoff = cutoff
         self.pValFlag = pValFlag
+        self.kDict = self.genAllk()
 
     def countkSeqRseq(self, k):
         sequence = self.sequence
         """
-        This function is to produce all k-mer counts
-        
-        The sequence and their reverse complement sequence are counted equivalently
-        I first count all the k-mer sequence in the entire sequence and store the counts in sequence count dictionary
-        Then I generate a sorted list of all the sequences in the dictionary
-        I use string.translate to produce reverse complement seq 
-        I pair the equivalent sequence by going though the entire list of sorted keys, 
-        keeping track of sequences I have already counted 
-        For each item in the list, I extract the value from the sequence count dictionary 
-        Then I set the count to 0 to avoid double counting 
-        Then I add that item to the list of counted items
-        If the reverse complement sequence also appears in sequence count dictionary
-        I add the value for the reverse sequence to the value I extracted above
-        Then I add the reverse sequence to the list of counted items
-        I add seq:rSeq count to the pair sequence count dictionary and return that dictionary   
-        
-        My method does double count reverse complement palindromes because when I start constructing the seq:rSeq pair
-        when seq is counted, its count in the original dictionary would be set to 0
-        Eg. {GAAC:10}, seq = GAAC, value = 10, after extracting this value set {GAAC:0}
-        count GAAC:GAAC = 10 + 0 = 10 (No double counting) 
-        
+
         Args:
             k: the target k-mer
 
@@ -188,18 +170,91 @@ class SearchMissing():
                     value += seqDict[rSeq]
                     seqDict[rSeq] = 0
                 counted.append(rSeq)
-                key = ''.join([seq, ':', rSeq])
+                key = ':'.join(sorted([seq, rSeq]))
                 pairDict[key] = value
                 # print(seq, ':', rSeq, value)
                 # sum += value
         # print('total', len(self.sequence)+1-k, 'sum is', sum)
         # sum = 0
         # for item, value in pairDict.items():
-        #    sum+=value
+        #     sum+=value
         # print('sanity check sum', sum)
         return pairDict
 
-    def prSeq(self, targetSeq):
+    def genAllk(self):
+        """
+        Use the input arguments to generate all k-mers from min to max count in the sequence
+        Returns:
+            A dictionary with k being the key, and a dictionary that contains the seq:rSeq pairs counts as the value
+            This method generate all needed k-mers from the sequence. Since all k-mer with this method will appear at least 1
+            in the DNA sequence, there is no divide by 0 issue.
+        """
+        kDict = {}
+        for k in range(self.min - 2, self.max + 1):
+            kDict[k] = self.countkSeqRseq(k)
+        return kDict
+
+    def zScore(self, targetSeq):
+        """
+
+        Args:
+            targetSeq: the k-mer that we are looking for zScore
+
+        Returns:
+            targetSeq: target sequence reverse complement sequence pair
+            countK: the count for the target sequence
+            mu: expected count for the sequence computed by Markovian(2)
+            zScore: zScore for the sequence
+        """
+        # length of DNA sequence is significantly large so n = N-k+1 can be approximated length of n
+        n = len(self.sequence)
+
+        prefix = targetSeq[0:-1]
+        suffix = targetSeq[1:]
+        mid = targetSeq[1:-1]
+
+        # generate reverse complement sequence and convert to alpha order pairs
+        translation = {65: 84, 84: 65, 67: 71, 71: 67}
+
+        rTarget = targetSeq.translate(translation)[::-1]
+        targetSeq = ':'.join(sorted([targetSeq, rTarget]))
+        countK = self.kDict[len(rTarget)].get(targetSeq)
+
+        rPrefix = prefix.translate(translation)[::-1]
+        prefix = ':'.join(sorted([prefix, rPrefix]))
+        countPrefix = self.kDict[len(rPrefix)].get(prefix)
+
+        rSuffix = suffix.translate(translation)[::-1]
+        suffix = ':'.join(sorted([suffix, rSuffix]))
+        countSuffix = self.kDict[len(rSuffix)].get(suffix)
+
+        rMid = mid.translate(translation)[::-1]
+        mid = ':'.join(sorted([mid, rMid]))
+        countMid = self.kDict[len(rMid)].get(mid)
+
+        # print('target',targetSeq, countK, 'prefix', prefix, countPrefix, 'suffix', suffix, countSuffix, 'mid', mid, countMid)
+        mu = (countPrefix * countSuffix)/countMid
+        prK = mu/n
+        sd = sqrt(mu*(1-prK))
+        zScore = (countK - mu)/sd
+
+        return targetSeq, countK, mu, zScore
+
+    def genzScore(self):
+        """
+        loop through the DNA sequence and find the Z Score for all the k-mers and output the zScore
+        Returns:
+            a dictionary with count of the target sequence, expected and zScore
+        """
+        resultDict = {}
+        for k in range(self.min, self.max+1):
+            for n in range(len(self.sequence)+1-k):
+                tempSeq = self.sequence[n:n+k]
+                targetSeq, countK, mu, zScore = self.zScore(tempSeq)
+                resultDict[targetSeq] = [countK, mu, zScore]
+        return resultDict
+
+    def printReuslts(self):
         pass
 
 class Usage(Exception):
@@ -237,6 +292,10 @@ def main(myCommandLine=None):
         # print('header is', header)
         # print('seq is', sequence[0:10])
         print(SearchMissing(sequence, min, max, cutoff, pValFlag))
+        if pValFlag:
+            pass
+        else:
+            pass
 
 
 if __name__ == "__main__":
