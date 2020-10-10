@@ -11,10 +11,6 @@ Homework 1: finding the missing motif
 Input/Output: STDIN / STDOUT
 """
 
-# TODO: Produce count for particular k-mers
-# TODO: Compute expected Pr(K)
-# TODO: Compute mu and sd
-# TODO: Output the results
 # print('{0:8}:{1:8}\t{2:0d}\t{3:0.2f}\t{4:0.2f}'.format(
 # seq, rSeq, count,E,pVal))
 # TODO: Add p value by scipy.stats.norm.cdf(z)
@@ -191,6 +187,7 @@ class SearchMissing():
         """
         kDict = {}
         for k in range(self.min - 2, self.max + 1):
+            print('generating k-mer dictionary for length', k)
             kDict[k] = self.countkSeqRseq(k)
         return kDict
 
@@ -255,7 +252,14 @@ class SearchMissing():
         return resultDict
 
     def printReuslts(self):
-        pass
+        results = self.genzScore()
+        # print(results.items())
+        # https://stackoverflow.com/questions/613183/how-do-i-sort-a-dictionary-by-value
+        results = {key: values for key, values in sorted(results.items(), key=lambda item: item[1][2])}
+        for key, values in results.items():
+            if values[2] < self.cutoff:
+                print(key, ':', values)
+
 
 class Usage(Exception):
     '''
@@ -290,8 +294,10 @@ def main(myCommandLine=None):
     fastaFile = FastAreader().readFasta()
     for header, sequence in fastaFile:
         # print('header is', header)
-        # print('seq is', sequence[0:10])
-        print(SearchMissing(sequence, min, max, cutoff, pValFlag))
+        # print('seq is', sequence)
+
+        searchSequence = SearchMissing(sequence, min, max, cutoff, pValFlag)
+        searchSequence.printReuslts()
         if pValFlag:
             pass
         else:
