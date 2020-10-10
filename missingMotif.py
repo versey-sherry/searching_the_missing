@@ -109,7 +109,7 @@ class SearchMissing():
     Probability is computed with Markovian(2)
     """
 
-    def __init__(self, sequence, min, max, cutoff, pvalflag):
+    def __init__(self, sequence, min, max, cutoff, pValFlag):
         """
 
         Args:
@@ -123,13 +123,33 @@ class SearchMissing():
         self.min = min
         self.max = max
         self.cutoff = cutoff
-        self.pValFlag = pvalflag
+        self.pValFlag = pValFlag
 
-    def countSeqRseq(self, sequence, k):
+    def countkSeqRseq(self, k):
+        sequence = self.sequence
         """
-
+        This function is to produce all k-mer counts
+        
+        The sequence and their reverse complement sequence are counted equivalently
+        I first count all the k-mer sequence in the entire sequence and store the counts in sequence count dictionary
+        Then I generate a sorted list of all the sequences in the dictionary
+        I use string.translate to produce reverse complement seq 
+        I pair the equivalent sequence by going though the entire list of sorted keys, 
+        keeping track of sequences I have already counted 
+        For each item in the list, I extract the value from the sequence count dictionary 
+        Then I set the count to 0 to avoid double counting 
+        Then I add that item to the list of counted items
+        If the reverse complement sequence also appears in sequence count dictionary
+        I add the value for the reverse sequence to the value I extracted above
+        Then I add the reverse sequence to the list of counted items
+        I add seq:rSeq count to the pair sequence count dictionary and return that dictionary   
+        
+        My method does double count reverse complement palindromes because when I start constructing the seq:rSeq pair
+        when seq is counted, its count in the original dictionary would be set to 0
+        Eg. {GAAC:10}, seq = GAAC, value = 10, after extracting this value set {GAAC:0}
+        count GAAC:GAAC = 10 + 0 = 10 (No double counting) 
+        
         Args:
-            sequence: the entire DNA sequence
             k: the target k-mer
 
         Returns:
@@ -159,7 +179,7 @@ class SearchMissing():
         # sum = 0
         for seq in seqList:
             rSeq = seq.translate(translation)[::-1]
-            if rSeq not in counted:
+            if seq not in counted:
                 value = seqDict[seq]
                 seqDict[seq] = 0
                 counted.append(seq)
@@ -178,6 +198,9 @@ class SearchMissing():
         #    sum+=value
         # print('sanity check sum', sum)
         return pairDict
+
+    def prSeq(self, targetSeq):
+        pass
 
 class Usage(Exception):
     '''
