@@ -316,10 +316,10 @@ class SearchMissing():
             results = {key: values for key, values in sorted(results.items(), key=lambda item: (-len(item[0]), item[1][4]))}
 
         else:
-            results = {key: values for key, values in sorted(results.items(), key=lambda item: (-len(item[0]), item[1][4]))}
+            results = {key: values for key, values in sorted(results.items(), key=lambda item: (-len(item[0]), item[1][2]))}
 
         # print(results)
-        n = sum([len(sequence) for sequence in self.sequences])
+        n = sum([len(sequence) - self.max for sequence in self.sequences])
         print('N =', n)
         for key, values in results.items():
             index = key.find(':')
@@ -348,10 +348,9 @@ def main(myCommandLine=None):
 
     '''
 
-    myCommandLine = CommandLine()  # read options from the command line
-
     try:
-        print(myCommandLine.args)  # print the parsed argument string .. as there is nothing better to do
+        myCommandLine = CommandLine()  # read options from the command line
+        #print(myCommandLine.args)  # print the parsed argument string .. as there is nothing better to do
     except Usage as err:
         print(err.msg)
 
