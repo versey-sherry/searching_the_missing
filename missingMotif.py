@@ -267,7 +267,11 @@ class SearchMissing():
         mu = (countPrefix * countSuffix) / countMid
         prK = mu / n
         sd = sqrt(mu * (1 - prK))
-        zScore = (countK - mu) / sd
+
+        if sd == 0:
+            zScore = 0
+        else:
+            zScore = (countK - mu) / sd
 
         return targetSeq, countK, mu, zScore
 
@@ -325,7 +329,10 @@ class SearchMissing():
             mu, sd = kStats[k]
             #compute z-score for normalized values
             # print(values)
-            normalizedz = (values[3]-mu)/sd
+            if sd ==0:
+                normalizedz = 0
+            else:
+                normalizedz = (values[3]-mu)/sd
             # 0th is count, 1st is mu, 2nd is z score, 3th is normalized score, 4th is the z score for normalized values
             values.append(normalizedz)
             # 0th is count, 1st is mu, 2nd is z score, 3th is normalized score
@@ -340,7 +347,7 @@ class SearchMissing():
 
         """
         results = self.pVal()
-        #print(results.items())
+        # print(results.items())
         # https://stackoverflow.com/questions/613183/how-do-i-sort-a-dictionary-by-value
         # https://stackoverflow.com/questions/4233476/sort-a-list-by-multiple-attributes/4233482
         if self.pValFlag:
@@ -404,6 +411,7 @@ def main(myCommandLine=None):
 
     searchSequence = SearchMissing(sequences, min, max, cutoff, pValFlag)
     searchSequence.printReuslts()
+    #print(searchSequence.kDict)
 
 if __name__ == "__main__":
     main()
