@@ -4,6 +4,8 @@
 
 import sys
 from math import sqrt
+from collections import defaultdict
+from scipy.stats import norm
 
 """
 Homework 1: finding the missing motif
@@ -188,7 +190,7 @@ class SearchMissing():
         """
         kDict = {}
         for k in range(self.min - 2, self.max + 1):
-            print('generating k-mer dictionary for length', k)
+            # print('generating k-mer dictionary for length', k)
             kDict[k] = self.countkSeqRseq(k)
         return kDict
 
@@ -232,10 +234,10 @@ class SearchMissing():
         countMid = self.kDict[len(rMid)].get(mid)
 
         # print('target',targetSeq, countK, 'prefix', prefix, countPrefix, 'suffix', suffix, countSuffix, 'mid', mid, countMid)
-        mu = (countPrefix * countSuffix)/countMid
-        prK = mu/n
-        sd = sqrt(mu*(1-prK))
-        zScore = (countK - mu)/sd
+        mu = (countPrefix * countSuffix) / countMid
+        prK = mu / n
+        sd = sqrt(mu * (1 - prK))
+        zScore = (countK - mu) / sd
 
         return targetSeq, countK, mu, zScore
 
@@ -246,22 +248,89 @@ class SearchMissing():
             a dictionary with count of the target sequence, expected and zScore
         """
         resultDict = {}
-        for k in range(self.min, self.max+1):
+        for k in range(self.min, self.max + 1):
             for sequence in self.sequences:
-                for n in range(len(sequence)+1-k):
-                    tempSeq = sequence[n:n+k]
+                for n in range(len(sequence) + 1 - k):
+                    tempSeq = sequence[n:n + k]
                     targetSeq, countK, mu, zScore = self.zScore(tempSeq)
                     resultDict[targetSeq] = [countK, mu, zScore]
         return resultDict
 
+    def pVal(self):
+        """
+        Use the Z score generated from the previous function, normalized the sequence count by the expected value
+        compute z scores for the normalized values by kmer groups
+
+        Returns:
+            a dictionary with count of the target sequence, expected and z score, and normalized score,
+            z score for normalized values, p value
+        """
+        zScoreResults = self.genzScore()
+        # Normalize Score
+        for key, values in zScoreResults.items():
+            # generate normal score by computing count/expected
+            # 0th is count, 1st is mu, 2nd is z score, 3th is normalized score
+            values.append(values[0]/values[1])
+        # print('z score results', zScoreResults)
+
+        # Extract the normalized values
+        groupNorm = defaultdict(list)
+        # print(kStats)
+        for key, values in zScoreResults.items():
+            k = key.find(':')
+            groupNorm[k].append(values[3])
+        # print('Group Norm', groupNorm)
+
+        # compute mu and sd
+        kStats = defaultdict(list)
+        for key, values in groupNorm.items():
+            mu = sum(values)/len(values)
+            sd = sqrt(sum([value**2 for value in values])/len(values) - mu**2)
+            kStats[key] = [mu, sd]
+        # print('kStats', kStats)
+
+        for key, values in zScoreResults.items():
+            k = key.find(':')
+            mu, sd = kStats[k]
+            #compute z-score for normalized values
+            # print(values)
+            normalizedz = (values[3]-mu)/sd
+            # 0th is count, 1st is mu, 2nd is z score, 3th is normalized score, 4th is the z score for normalized values
+            values.append(normalizedz)
+            # 0th is count, 1st is mu, 2nd is z score, 3th is normalized score
+            # 4th is the z score for normalized values, 5th is the p value
+            values.append(norm.cdf(normalizedz))
+        return zScoreResults
+
     def printReuslts(self):
-        results = self.genzScore()
-        # print(results.items())
+        """
+        pretty printing the results
+        Returns:
+
+        """
+        results = self.pVal()
+        #print(results.items())
         # https://stackoverflow.com/questions/613183/how-do-i-sort-a-dictionary-by-value
-        results = {key: values for key, values in sorted(results.items(), key=lambda item: item[1][2])}
+        # https://stackoverflow.com/questions/4233476/sort-a-list-by-multiple-attributes/4233482
+        if self.pValFlag:
+            results = {key: values for key, values in sorted(results.items(), key=lambda item: (-len(item[0]), item[1][4]))}
+
+        else:
+            results = {key: values for key, values in sorted(results.items(), key=lambda item: (-len(item[0]), item[1][4]))}
+
+        # print(results)
+        n = sum([len(sequence) for sequence in self.sequences])
+        print('N =', n)
         for key, values in results.items():
-            if values[2] < self.cutoff:
-                print(key, ':', values)
+            index = key.find(':')
+            if self.pValFlag:
+                if values[4] < self.cutoff:
+                    print('{0:8}:{1:8}\t{2:0d}\t{3:0.2f}\t{4:0.2f}\t{5:0.2f}'.format(
+                        key[0:index], key[index+1:], values[0], values[1], values[4], values[5]))
+            else:
+                if values[2] < self.cutoff:
+                    print('{0:8}:{1:8}\t{2:0d}\t{3:0.2f}\t{4:0.2f}'.format(
+                        key[0:index], key[index+1:], values[0], values[1], values[2]))
 
 
 class Usage(Exception):
@@ -300,14 +369,11 @@ def main(myCommandLine=None):
     for header, sequence in fastaFile:
         # print('header is', header)
         # print('seq is', sequence)
+        # print(len(sequence))
         sequences.append(sequence)
 
-    if pValFlag:
-        pass
-    else:
-        searchSequence = SearchMissing(sequences, min, max, cutoff, pValFlag)
-        searchSequence.printReuslts()
-
+    searchSequence = SearchMissing(sequences, min, max, cutoff, pValFlag)
+    searchSequence.printReuslts()
 
 if __name__ == "__main__":
     main()

@@ -134,3 +134,4 @@ dmypy.json
 Example\ Output/
 .idea/
 scratch.py
+*.out
