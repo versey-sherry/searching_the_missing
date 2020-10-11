@@ -132,6 +132,7 @@ dmypy.json
 *.fa
 *.fna
 Example\ Output/
+My\ Output/
 .idea/
 scratch.py
 *.out

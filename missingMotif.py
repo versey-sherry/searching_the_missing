@@ -11,6 +11,16 @@ from scipy.stats import norm
 Homework 1: finding the missing motif
 
 Input/Output: STDIN / STDOUT
+
+This script aims at finding the underrepresented motif by the z-score
+
+Examples:
+Order sequence by the z-score with respect to the whole sequence
+python missingMotif.py --minMotif 3 --maxMotif 8 --cutoff -5  < xx.fna  > output.out
+
+Order sequence by the z-score with respect to the k mer group and the p value
+python missingMotif.py --minMotif 3 --maxMotif 8 --cutoff 0 --kScoring  < xx.fna  > output.out
+
 """
 
 # print('{0:8}:{1:8}\t{2:0d}\t{3:0.2f}\t{4:0.2f}'.format(
@@ -104,12 +114,27 @@ class FastAreader():
 class SearchMissing():
     """
     Algorithms that takes single strand of DNA, count the number of k-mers, output the sequences count and Z-score
-    Null model is binomial
-    Probability is computed with Markovian(2)
+    The output is ordered by z score of a DNA sequence by k-mer group
+
+    To estimate the z score for a particular motif, we assume the distribution is binomial
+    and the probability and expected value for the motif is estimated by Markovian(2)
+
+    To estimate the z score for a particular motif in a k-mer group, we assume that within the K-mer group,
+    the motif count, normalized by the expected value should be normally distributed.
+    expected value and standard deviation within k-mer group is approximated by sample mean and sample deviation
+
+    For my computation, I assume that the motif must appear in the DNA sequence
+    at least once to be considered as a relevant motif
+    Therefore, I didn't permutate all possible k-mer and my results don't include motif that has 0 count
+    My mean of normalized values would be slightly greater than the mean of normalized values that include 0 counts.
+    However, the order of non-zero count motifs would be the same as the results that includes 0 counts
+
     """
 
     def __init__(self, sequences, min, max, cutoff, pValFlag):
         """
+        Initialize the objects and add all necessary attributes, including the dictionary of all needed k-mer
+        Including such a dictionary will avoid computing the dictionary multiple times
 
         Args:
             sequence: DNA sequences, a list containing all fasta sequences
@@ -127,9 +152,12 @@ class SearchMissing():
 
     def countkSeqRseq(self, k):
         """
+        This function counts the motif of length k
+        The algorithm counts the sequence and the reverse complement sequence equivalently
+        and return the total count of sequence and its reverse sequence as the count for the pair
 
         Args:
-            k: the target k-mer
+            k: the length of the motif we are counting
 
         Returns:
             a dictionary contains the Seq:rSeq pair count for all the k-mer
@@ -196,6 +224,8 @@ class SearchMissing():
 
     def zScore(self, targetSeq):
         """
+        Function that computes expected value of the motif by Markovian(2) and assume the distribution to be binomial
+        Then the function compute the z score for the motif
 
         Args:
             targetSeq: the k-mer that we are looking for zScore
@@ -244,6 +274,7 @@ class SearchMissing():
     def genzScore(self):
         """
         loop through the DNA sequence and find the Z Score for all the k-mers and output the zScore
+
         Returns:
             a dictionary with count of the target sequence, expected and zScore
         """
