@@ -6,6 +6,8 @@ import sys
 from math import sqrt
 from collections import defaultdict
 from scipy.stats import norm
+import time
+
 
 """
 Homework 1: finding the missing motif
@@ -61,7 +63,7 @@ class CommandLine():
         self.parser.add_argument('--minMotif', type=int, help='minimum motif size to evaluate (int>=3)')
         self.parser.add_argument('--maxMotif', type=int, help='maximum motif size to evaluate (int<=8)')
         self.parser.add_argument('--cutoff', type=int, help='Z-score cutoff (negative int)')
-        self.parser.add_argument('--kScoring', action='store_true', help='displaying ')
+        self.parser.add_argument('--kScoring', action='store_true', help='Using p value to score the motif and display p value')
         self.parser.add_argument('--version', action='version', version='%(prog)s 0.1')
         if inOpts is None:
             self.args = self.parser.parse_args()
@@ -414,4 +416,6 @@ def main(myCommandLine=None):
     #print(searchSequence.kDict)
 
 if __name__ == "__main__":
+    #start = time.time()
     main()
+    #print('time consumed is', time.time() - start)
