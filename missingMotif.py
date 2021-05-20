@@ -280,7 +280,6 @@ class SearchMissing():
     def genzScore(self):
         """
         loop through the DNA sequence and find the Z Score for all the k-mers and output the zScore
-
         Returns:
             a dictionary with count of the target sequence, expected and zScore
         """
@@ -297,7 +296,6 @@ class SearchMissing():
         """
         Use the Z score generated from the previous function, normalized the sequence count by the expected value
         compute z scores for the normalized values by kmer groups
-
         Returns:
             a dictionary with count of the target sequence, expected and z score, and normalized score,
             z score for normalized values, p value
@@ -346,7 +344,7 @@ class SearchMissing():
         """
         pretty printing the results
         Returns:
-
+            None
         """
         results = self.pVal()
         # print(results.items())
