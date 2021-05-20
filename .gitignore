@@ -136,3 +136,4 @@ My\ Output/
 .idea/
 scratch.py
 *.out
+.DS_Store
