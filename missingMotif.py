@@ -27,7 +27,6 @@ python missingMotif.py --minMotif 3 --maxMotif 8 --cutoff 0 --kScoring  < xx.fna
 
 # print('{0:8}:{1:8}\t{2:0d}\t{3:0.2f}\t{4:0.2f}'.format(
 # seq, rSeq, count,E,pVal))
-# TODO: Add p value by scipy.stats.norm.cdf(z)
 
 class CommandLine():
     '''
@@ -280,7 +279,6 @@ class SearchMissing():
     def genzScore(self):
         """
         loop through the DNA sequence and find the Z Score for all the k-mers and output the zScore
-
         Returns:
             a dictionary with count of the target sequence, expected and zScore
         """
@@ -297,7 +295,6 @@ class SearchMissing():
         """
         Use the Z score generated from the previous function, normalized the sequence count by the expected value
         compute z scores for the normalized values by kmer groups
-
         Returns:
             a dictionary with count of the target sequence, expected and z score, and normalized score,
             z score for normalized values, p value
