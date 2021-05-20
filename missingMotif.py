@@ -27,7 +27,6 @@ python missingMotif.py --minMotif 3 --maxMotif 8 --cutoff 0 --kScoring  < xx.fna
 
 # print('{0:8}:{1:8}\t{2:0d}\t{3:0.2f}\t{4:0.2f}'.format(
 # seq, rSeq, count,E,pVal))
-# TODO: Add p value by scipy.stats.norm.cdf(z)
 
 class CommandLine():
     '''
